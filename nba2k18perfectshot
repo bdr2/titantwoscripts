@@ -1,0 +1,515 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/************************************************************************************************************
+     INSTRUCTION
+  -----------------------------------------------------------------------------------------------------------
+ 1.  Script will automatically record the time when you shot
+    // Record the time of X press when it is more than 150 ms.
+ 
+ NOTE: 
+ 
+ 2. Set Recorded time to be time for Perfect Shot
+   A. Perform standing still shot and if your time is perfect save it ( press and hold D-pad UP + press X ).
+ 
+ 
+   B. Then perform running shot and if your time is perfect save it ( hold D-pad UP + press Y ).
+ 
+ 3. Save Time to EEPROM memory
+    // hold D-pad UP + press XB1_MENU  
+ 
+ 4. Load Time from EEPROM memory
+    // hold D-pad UP + XB1_VIEW
+ 
+ 5. Reset time for Perfect Shot
+    // hold D-pad UP + press A
+ 
+ 6. Perform Perfect Shot
+    // just hold Shot button until your player perform shot
+    - script will stop sending of the output to console of the button, when it reach the Perfect time.
+ 
+ 
+*************************************************************************************************************/
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <titanone.gph>
+
+define SHOT_BUTTON  = XB1_X;              
+define DEFENSE      = XB1_LB;                          
+define BEHIND       = XB1_RS;                      
+define LEGCROSS     = XB1_LT;     
+define holdBtnA     = XB1_LT;  // hold btn for choice A skill         
+define Lbtn         = XB1_LB;  // Modifier Button to activate skill to the Left - Bank 1
+define Rbtn         = XB1_RB;  // Modifier Button to activate skill to the Right- Bank 1
+define OneDirectBtn = XB1_RS;  // Modifier Button to activate skill with One Direction
+ 
+define timelimit=300;  // Time to Double click 
+//////////////////////////////////////////////////////////////////////////////////////////
+
+define HoldTime = 150;  // ms. to be able to record at either quick, normal or late shot.
+
+//////////////////////////////////////////////////////////////////////////////////////////
+define DOnotUSE =0;
+data(DOnotUSE, 
+//  1   2   3   4    5   6   7   8    9 10  11   12   13  14  15  16  17  18  19   20  21   22  23   24  25  26    27   28    29    30   31    32 
+    0,-100,50,-100,100,-100,100,-50,100, 0, 100, 50, 100,100, 50,100,  0,100, -50,100,-100,100,-100, 50,-100, 0, -100, -50, -100, -100, -50, -100,
+// 33   34 35   36  37   38  39  40  41 42   43  44   45  46  47  48  49  50   51  52   53  54   55  56   57 58    59   60    61    62   63    64   
+    0,-100,50,-100,100,-100,100,-50,100, 0, 100, 50, 100,100, 50,100,  0,100, -50,100,-100,100,-100, 50,-100, 0, -100, -50, -100, -100, -50, -100,
+// 65   66 67   68  69   70  71  72  73 74   75  76   77  78  79  80  81  82   83  84   85  86   87  88   89 90    91   92    93    94   95    96
+    0,-100,50,-100,100,-100,100,-50,100, 0, 100, 50, 100,100, 50,100,  0,100, -50,100,-100,100,-100, 50,-100, 0, -100, -50, -100, -100, -50, -100,
+// 97  98  99  100                       
+    4, 12,  6, 10   //                   
+ 
+);// end of data         
+/////////////////////////////////////////////////////////////////////////////////
+
+int SKill=1;
+int b_Zapis;
+int w_StandingStill;
+int w_RunningShot;
+int w_recordedTime;
+int w_delay;
+int OnOff;
+int LX,LY;
+int ZX,ZY;
+int b_Standing;
+int Zone;
+int temp_Zone;
+int IndL;
+int CanUse1,CanUse2;
+int RightON   =FALSE;                                                      
+int time_to_DblClick_R=0;                      
+int time_to_DblClick_L=0;                      
+ 
+int IndR_L=0;       // IndR_L for LEFT ANALOG we use with dbyte(Ind+ ..);
+int Ind=0;          // Ind we use with dbyte(Ind+ ..);                  
+int mX,mY;                                                                   
+int b_Exit;                               
+int Points=0;                                 
+int OnOffMods=TRUE;                                             
+int w_delay1;
+int w_delay2; 
+int Edit_On;                               
+ 
+int Rumble_Tipe= RUMBLE_A;
+int w_rumble = 200;    
+
+/////////////////////////////////////////////////////////////////////////////////
+//   INITIALIZATION
+ 
+init {
+    w_StandingStill= get_pvar(SPVAR_1, 0,4000,0);
+    w_RunningShot= get_pvar(SPVAR_2, 0,4000,0);
+ 
+}
+ 
+/////////////////////////////////////////////////////////////////////////////////
+//     MAIN BLOCK
+ 
+main { 
+ 
+    set_val(TRACE_1,w_StandingStill/10);
+    set_val(TRACE_2,w_RunningShot/10);
+    set_val(TRACE_3,w_recordedTime/10);
+    set_val(TRACE_4,Zone);
+    set_val(TRACE_5,b_Standing);
+    set_val(TRACE_6,Edit_On);
+ 
+ 
+ 
+    if(abs(get_val(XB1_LX))<80 && abs(get_val(XB1_LY))<80) {            
+        b_Standing=TRUE;                                     
+    }
+    else {                                                     
+        LX=get_val(XB1_LX);                                      
+        LY=get_val(XB1_LY);                                      
+        b_Standing=FALSE;                                    
+        get_Zone(LX,LY);                                     
+        ZX=LY;
+        ZY=inv(LX);   // Zone 13                          
+    }                                                          
+
+    // Bank 1 run to the LEFT                 
+    //--------------------------------------------------------------
+    if(event_press(XB1_LS)) {
+        RightON = 0;
+        combo_run(DIRECTION_OF_L_ANALOG);
+    }
+
+    // if(event_press(XB1_RS)){RightON = 1;combo_run(DIRECTION_OF_L_ANALOG);}
+    //               
+    //--------------------------------------------------------------
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Shot with recorded time when Standing / when Running 
+    ////////////////////////////////////////////////////////////////////////////
+
+    if(b_Standing && CanUse1) {   // Shot from Standing Still position
+        if(w_StandingStill > HoldTime) {
+            if(get_val(XB1_X) && get_ptime(XB1_X) >= w_StandingStill) {
+                set_val(XB1_X,0);
+            }
+        }
+    }
+    else if(!b_Standing && CanUse2) {   // Shot from running position
+        if(w_RunningShot > HoldTime) {
+            if(get_val(XB1_X) && get_ptime(XB1_X) >= w_RunningShot) {
+                set_val(XB1_X,0);
+            }
+        }
+    }
+
+
+
+    // Hands Up Defense + Double Team + Ball Pressure + Intense Defense when pressing LB. 
+    if(get_val(DEFENSE)) {                                                    
+        set_val(XB1_LT, 100);
+        set_val(XB1_RY, 100);
+
+        //   !THE FOLLOWING SCRIPTS ARE MEANT TO BE USED WHILE STANDING STILL!
+        // However, they can also be used while moving to produce some "other" effects.
+        if(get_val(XB1_RB) ) { 
+            set_val(XB1_LB, 0);
+            set_val(XB1_RB, 0);
+            set_val(XB1_RY, -100);
+        }
+    }    
+
+    // Hold RS to rapidly cross behind the back, then choose a direction to blow past your defender. Must NOT be moving.
+    if(get_val(BEHIND)) {                                          
+        combo_run(Behind_back_dribble);
+    }                                                                
+
+
+    // Hold D-pad LEFT and press LT to rapidly cross the ball back and fourth between the legs (Ball in Left hand?)
+    if(get_val(XB1_LEFT)) {
+        if(get_val(XB1_LT)) {                      
+            set_val(XB1_LT, 0);
+            combo_run(LEFTLEGCROSS);
+        }
+    }
+
+
+    // Hold D-pad DOWN and press LT to rapidly cross the ball back and fourth between the legs (Ball in Right hand?) 
+    if(get_val(XB1_DOWN)) {  
+        if(get_val(XB1_LT)) {                      
+             set_val(XB1_LT, 0);
+             combo_run(RIGHTLEGCROSS);
+        }
+    }
+
+
+    // Hold LT and D-pad UP to max rumble the screen during freethrows. 
+    if(get_val(XB1_UP)) {                                                      
+        if(get_val(XB1_LT)) {
+            set_val(XB1_LT, 0);
+            combo_run(DISTURB);   
+        }                                            
+    }
+ 
+ 
+    // Record the time of X press when it is more than 600 ms.
+    ////////////////////////////////////////////////////////////////////////////
+    if(get_val(XB1_X) && get_ptime(XB1_X) > HoldTime)b_Zapis=TRUE;
+ 
+    if(b_Zapis) {
+        if(event_release(XB1_X)) {
+            b_Zapis=FALSE;
+            w_recordedTime=get_ptime(20);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////// 
+    // Set Recorded time to be time for Standing Still Shot  hold D-pad UP + X
+    // Set Recorded time to be time for Running Shot  hold D-pad UP + Y
+    //
+    // Save Time to EEPROM memory => hold D-pad UP + XB1_MENU
+    ////////////////////////////////////////////////////////////////////////////
+    if(get_val(XB1_UP)) {
+        //  press X  set standing still position timing
+        if( event_press(SHOT_BUTTON)) {
+            w_StandingStill = w_recordedTime;
+            CanUse1=TRUE;
+        } 
+        //  press Y  set runing position timing
+        if( event_press(XB1_Y)) {
+            w_RunningShot = w_recordedTime;
+            CanUse2=TRUE;
+        }
+        // Save Time to EEPROM memory => press XB1_MENU  save timing for both shots
+        if( event_press(XB1_MENU)) {
+            combo_run(Save_Timing);
+        }
+
+        // Load Time from EEPROM memory => press XB1_VIEW
+        if( event_press(XB1_VIEW)) {
+            if(w_StandingStill> HoldTime) CanUse1=TRUE;
+            if(w_RunningShot> HoldTime) CanUse2=TRUE;
+        }
+
+        // Reset time for Perfect Shot
+        // press A
+        if( event_press(XB1_A)) {
+            w_StandingStill=0;
+            CanUse1=FALSE;
+        }
+        // press B
+        if( event_press(XB1_B)) {
+            w_RunningShot=0;
+            CanUse2=FALSE;
+        }
+
+        set_val(XB1_A,0);
+        set_val(XB1_B,0);
+        set_val(XB1_VIEW,0);
+        set_val(XB1_MENU,0);
+        set_val(XB1_Y,0);
+        set_val(SHOT_BUTTON,0);
+    }
+
+    if(get_val(XB1_RS)) {
+        // Increase / Decrease Running shot time
+        if(event_press(XB1_UP)) {
+            w_RunningShot = w_RunningShot + 5;
+            Edit_On =TRUE;
+        }
+
+        if(event_press(XB1_DOWN)) {
+            w_RunningShot = w_RunningShot - 5;
+            Edit_On =TRUE;
+        }
+
+        // Increase / Decrease Standing Still shot time
+        if(event_press(XB1_RIGHT)) {
+            w_StandingStill = w_StandingStill + 5;
+            Edit_On =TRUE;
+        }
+
+        if(event_press(XB1_LEFT)) {
+            w_StandingStill = w_StandingStill - 5;
+            Edit_On =TRUE;
+        }
+
+    }
+    else if(Edit_On ) {
+        combo_run(Save_Timing);
+    } 
+
+
+
+} //------------------------------------------------------------------------------
+
+
+
+combo Save_Timing {
+    if(w_StandingStill> HoldTime) set_pvar(SPVAR_1, w_StandingStill);  // Standing Still time
+    if(w_RunningShot> HoldTime) set_pvar(SPVAR_2, w_RunningShot);  // Running time
+    Edit_On = FALSE;
+}
+
+combo RUMBLE_NOTIFY {
+    set_rumble(Rumble_Tipe,100);
+    wait(w_rumble);
+    reset_rumble();
+}
+
+combo DIRECTION_OF_L_ANALOG {
+
+    OnOff=FALSE;                                                 
+
+    if(RightON) {                                                
+        ZX=inv(LY);ZY=LX; // Zone 3                               
+    }
+    else {                                                     
+        ZX=LY;ZY=inv(LX); // Zone 7                                
+    }                                                           
+
+    block(11,1000);block(12,1000);
+    
+    if(Zone>0) {          // SPIN_MOVE
+        if(SKill== 1) {
+            combo_run(SPIN_MOVE);
+        }  
+        //if( SKill== 7) {dob=97; Elastico=FALSE;combo_run(TURNandSPIN_ELASTICO);} // Turn and Spin // 7. Turn and Spin
+        //if( SKill== 8) {combo_run(HOCUS_POCUS); } // Hocus Pocus // 8. Hocus Pocus
+        //if( SKill== 6) {dob=97; Elastico=TRUE;combo_run(TURNandSPIN_ELASTICO);}  // Elastico_SKILL // 6. Elastico
+        // Default Skill 
+        //if(SKill==13) {combo_run(DRAG_BACK);}        //Drag Back // 13. Drag Back
+    } 
+ 
+}
+
+combo SPIN_MOVE {
+    
+    RightON=!RightON;
+    
+    if(RightON) {
+        Ind=(Zone+12)*2;
+    }
+    else {
+        Ind=((Zone+4)*2)-1;
+    }
+    
+    Points=5;
+    
+    combo_run(MimicCircle);
+}
+ 
+///////////////////////////////////////////////////////////////////
+// MIMIC CIRCLE  //////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+combo MimicCircle {  
+ 
+    if(Points>=1) {                                       
+        if (RightON) {RA_CCW(dbyte(Ind-0),dbyte(Ind-1));}  
+        else {RA_CW(dbyte(Ind+0),dbyte(Ind+1));}          
+    }
+    
+    wait(30);
+
+    if(Points>=2) {                                       
+        if (RightON){RA_CCW(dbyte(Ind-4),dbyte(Ind-5));}  
+        else {RA_CW(dbyte(Ind+4),dbyte(Ind+5));}          
+    }
+    
+    wait(30);
+
+    if(Points>=3) {                                       
+        if (RightON){RA_CCW(dbyte(Ind-8),dbyte(Ind-9));}  
+        else {RA_CW(dbyte(Ind+8),dbyte(Ind+9));}          
+    }
+
+    wait(30);   
+
+    if(Points>=4) { 
+        w_delay1=30;                                      
+        if (RightON){RA_CCW(dbyte(Ind-12),dbyte(Ind-13));}  
+        else {RA_CW(dbyte(Ind+12),dbyte(Ind+13));}          
+    }
+    else {
+        w_delay1=10;
+    }                                                     
+
+    wait(w_delay1);                                         
+
+    if(Points>=5){  
+        w_delay1=30;                                      
+        if (RightON){RA_CCW(dbyte(Ind-16),dbyte(Ind-17));}  
+        else {RA_CW(dbyte(Ind+16),dbyte(Ind+17));}          
+    }
+    else {
+        w_delay1=10;
+    }                                                     
+
+    wait(w_delay1);  
+
+    OnOff=TRUE; 
+
+}   
+
+//Wait times can be adjusted to better suit your latency if you are experiencing issues.
+combo Behind_back_dribble {
+    set_val(XB1_RY, 100);
+    wait(20);
+    set_val(XB1_RY, 0);
+}
+
+//////////////////////////////////////////////////////////////////////
+combo RIGHTLEGCROSS {
+    set_val(XB1_RY, 71);
+    set_val(XB1_RX, -81); 
+    wait(50);
+
+    set_val(XB1_RY, 0);
+    set_val(XB1_RX, 0); 
+    wait(200);
+
+    set_val(XB1_RX, 100);
+    wait(50);
+
+    set_val(XB1_RX, 0); 
+    wait(520);
+}
+
+//////////////////////////////////////////////////////////////////////
+combo LEFTLEGCROSS {
+    set_val(XB1_RY, 71);
+    set_val(XB1_RX, 81); 
+    wait(50);
+
+    set_val(XB1_RY, 0);
+    set_val(XB1_RX, 0); 
+    wait(200);
+
+    set_val(XB1_RX, -100); 
+    wait(50);
+
+    set_val(XB1_RX, 0); 
+    set_val(XB1_RY, 0); 
+    wait(520);
+}
+
+//////////////////////////////////////////////////////////////////////
+combo DISTURB {
+ 
+    set_val(XB1_LT, 100);
+    wait(35);
+
+    set_val(XB1_LT, 0);
+    set_val(XB1_RT, 100);
+    wait(35);
+
+    set_val(XB1_RT, 0);
+}
+
+function get_Zone (X,Y) {
+         if ((Y < -80        )&& (X>=- 20 && X<   20 ))    {Zone= 1;} // LS==>1 
+    else if ((Y < -80        )&& (X>=  20 && X<=  70 ))    {Zone= 2;} // LS==>2 
+    else if ( Y<  -70         &&  X>   70             )    {Zone= 3;} // LS==>2 
+    else if ((X >  80        )&& (Y>= -70 && Y<= -20 ))    {Zone= 4;} // LS==>2 
+    else if ((X >  80        )&& (Y>  -20 && Y<   20 ))    {Zone= 5;} // LS==>2 
+    else if ((X >  80        )&& (Y>=  20 && Y<=  70 ))    {Zone= 6;} // LS==>2 
+    else if ((X >  70        )&& (           Y>   70 ))    {Zone= 7;} // LS==>2 
+    else if ((X<  70 && X> 20)&& (           Y== 100 ))    {Zone= 8;} // LS==>2 
+    else if ((Y >  80        )&& (X>= -20 && X<=  20 ))    {Zone= 9;} // LS==>2 
+    else if ((Y >  80        )&& (X<  -20 && X>  -70 ))    {Zone=10;} // LS==>2 
+    else if ((Y >  70        )&& (           X<  -70 ))    {Zone=11;} // LS==>2 
+    else if ((X < -80        )&& (Y>=  20 && Y<=  70 ))    {Zone=12;} // LS==>2 
+    else if ((X < -80        )&& (Y>  -20 && Y<   20 ))    {Zone=13;} // LS==>2 
+    else if ((X < -80        )&& (Y<  -20 && Y>  -70 ))    {Zone=14;} // LS==>2 
+    else if ((X <- 70        )&& (           Y<  -70 ))    {Zone=15;} // LS==>2 
+    else if ((Y < -80        )&& (X<  -20 && X>  -70 ))    {Zone=16;} // LS==>2 
+
+    temp_Zone=Zone;                                                      
+    f_get_Dir (Zone);                                                    
+}                                              
+
+function f_get_Dir (zona) {                 
+ 
+    IndL= (zona * 2)-1;                   
+ 
+    //mX=dbyte(IndL);                       
+    //mY=dbyte(IndL+1);                     
+}
+
+//Right Analog Functions                                        
+//--------------------------------------------------------------
+function RA_CW(X,Y) {
+    set_val(9,X );
+    set_val(10,Y);
+}
+
+function RA_CCW(Y,X) {
+    set_val(10,Y );
+    set_val(9,X);
+}
+
+function LA_CW(X,Y) {
+    set_val(11,X );
+    set_val(12,Y);
+}
+
+function f_RB_LB_LT (a,b,c) {
+    if(a) set_val(3,100);  //RB 
+    if(b) set_val(6,100);  //LB 
+    if(c) set_val(7,100);  //LT 
+}
