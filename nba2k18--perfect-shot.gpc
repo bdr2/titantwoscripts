@@ -32,15 +32,19 @@
 
 #include <titanone.gph>
 
-define SHOT_BUTTON  = XB1_X;              
-define DEFENSE      = XB1_LB;                          
-define BEHIND       = XB1_RS;                      
-define LEGCROSS     = XB1_LT;     
-define holdBtnA     = XB1_LT;  // hold btn for choice A skill         
+define SHOT_BUTTON  = XB1_X;
+define BEHIND       = XB1_RS;
+define LEGCROSS     = XB1_LT;
+//define DEFENSE      = XB1_LB;
+
+/*************************************************************************************************************
+define holdBtnA     = XB1_LT;  // hold btn for choice A skill
 define Lbtn         = XB1_LB;  // Modifier Button to activate skill to the Left - Bank 1
 define Rbtn         = XB1_RB;  // Modifier Button to activate skill to the Right- Bank 1
 define OneDirectBtn = XB1_RS;  // Modifier Button to activate skill with One Direction
- 
+*************************************************************************************************************/
+
+
 define timelimit=300;  // Time to Double click 
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,8 +62,8 @@ data(DOnotUSE,
 // 97  98  99  100                       
     4, 12,  6, 10   //                   
  
-);// end of data         
-/////////////////////////////////////////////////////////////////////////////////
+); // end of data         
+//////////////////////////////////////////////////////////////////////////////////////////
 
 int SKill=1;
 int b_Zapis;
@@ -78,7 +82,7 @@ int CanUse1,CanUse2;
 int RightON   =FALSE;                                                      
 int time_to_DblClick_R=0;                      
 int time_to_DblClick_L=0;                      
- 
+
 int IndR_L=0;       // IndR_L for LEFT ANALOG we use with dbyte(Ind+ ..);
 int Ind=0;          // Ind we use with dbyte(Ind+ ..);                  
 int mX,mY;                                                                   
@@ -88,24 +92,24 @@ int OnOffMods=TRUE;
 int w_delay1;
 int w_delay2; 
 int Edit_On;                               
- 
+
 int Rumble_Tipe= RUMBLE_A;
 int w_rumble = 200;    
 
 /////////////////////////////////////////////////////////////////////////////////
 //   INITIALIZATION
- 
+
 init {
     w_StandingStill= get_pvar(SPVAR_1, 0,4000,0);
     w_RunningShot= get_pvar(SPVAR_2, 0,4000,0);
- 
+
 }
- 
+
 /////////////////////////////////////////////////////////////////////////////////
 //     MAIN BLOCK
- 
+
 main { 
- 
+
     set_val(TRACE_1,w_StandingStill/10);
     set_val(TRACE_2,w_RunningShot/10);
     set_val(TRACE_3,w_recordedTime/10);
@@ -139,6 +143,7 @@ main {
     //--------------------------------------------------------------
 
 
+
     ////////////////////////////////////////////////////////////////////////////
     // Shot with recorded time when Standing / when Running 
     ////////////////////////////////////////////////////////////////////////////
@@ -159,7 +164,7 @@ main {
     }
 
 
-
+/************************************************************************************************
     // Hands Up Defense + Double Team + Ball Pressure + Intense Defense when pressing LB. 
     if(get_val(DEFENSE)) {                                                    
         set_val(XB1_LT, 100);
@@ -173,7 +178,9 @@ main {
             set_val(XB1_RY, -100);
         }
     }    
-
+*************************************************************************************************/
+    
+    
     // Hold RS to rapidly cross behind the back, then choose a direction to blow past your defender. Must NOT be moving.
     if(get_val(BEHIND)) {                                          
         combo_run(Behind_back_dribble);
