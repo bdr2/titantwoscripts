@@ -13,6 +13,7 @@ Mash A for 1.5 seconds, LT + RT .1 seconds after > repeat
 // ---------------------------------------------------------
 int toggle;
 int onoff;
+
 /////////////////////////////
 // combo wait times
 int press = 50;
@@ -196,4 +197,4 @@ combo reset {   //need to wait 2 sec here before the next button press executes
     set_val(XB1_A, 100);
     wait(1125);
     wait(1125);
-    }
+}
