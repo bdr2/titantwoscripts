@@ -1,7 +1,3 @@
-////////////////////////////////
-// CURRENTLY DOES NOT COMPILE //
-////////////////////////////////
-
 /*
 Basically you need to mash A for 1.5 seconds or so, then hit LT and RT simultaneously. 
 Then repeat forever. I believe 15 A presses in that 1.5 seconds would be sufficient. 
@@ -11,12 +7,12 @@ Mash A for 1.5 seconds, LT + RT .1 seconds after > repeat
 */
 
 #include <titanone.gph>
+
  
 // VARIABLES
 // ---------------------------------------------------------
 int toggle;
 int onoff;
-
 /////////////////////////////
 // combo wait times
 int press = 50;
@@ -24,32 +20,44 @@ int rest  = 57;
  
  
 main {
-    if (get_val(XB1_RIGHT)) 
-	    toggle =  TRUE; // Turn it on when you press DPAD LEFT
+    if (get_val(XB1_RIGHT)) toggle =  TRUE; // Turn it on when you press DPAD LEFT
+    if (get_val(XB1_RIGHT)) toggle = FALSE; // turn it off when you press DPAD LEFT
     
-	if (get_val(XB1_RIGHT))
-		toggle = FALSE; // turn it off when you press DPAD LEFT
-    
-	if (toggle) {}
+    if (toggle) {}
     else combo_stop(PressR2andL2);
     
-	if (toggle) {}
+    if (toggle) {}
     else combo_stop (reset);
     
-	if(toggle) {
+    if(toggle){
         combo_run(PressR2andL2);
     }
  
-    if(toggle) {
+    if(toggle){
         combo_run(PressR2andL2);
     }
  
-    if(toggle) {
+    if(toggle){
+        set_val(XB1_A, 100);
+    }
+ 
+    if(get_val(PS4_R1)) {
+        combo_run(Turbo_1);
+    }
+ 
+    if(event_press(XB1_UP)){
+        onoff = !onoff;
+    }
+ 
+ 
+    if(onoff){
         combo_run(SMASH_A);
     }
-
+}
  
-    //Press R2 and L2, one after another repeatedly with no delay for 45 seconds.
+ 
+combo Something {
+//Press R2 and L2, one after another repeatedly with no delay for 45 seconds.
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
@@ -80,21 +88,7 @@ main {
  
     set_val(PS4_LX, 100);
     wait(250); wait(250);
- 
-    //Repeat.
-    if(get_val(PS4_R1)) {
-        combo_run(Turbo_1);
-    }
- 
-    if(event_press(XB1_UP)){
-        onoff = !onoff;
-    }
- 
-    if(onoff){
-        combo_run(SMASH_A);
-    }
-}
- 
+ }
  
 combo SMASH_A {
     set_val(XB1_A,100);
@@ -152,11 +146,11 @@ combo SMASH_A {
     set_val(XB1_A,100);
     wait(press);
     wait(rest);
-  
+
     set_val(XB1_A,100);
     wait(press);
     wait(rest);
-    
+
     set_val(XB1_RT,100);
     set_val(XB1_LT,100);
     wait(1000);
@@ -178,27 +172,28 @@ combo Turbo_1 {
     wait(15);
 }
  
-combo PressR2andL2 { // 1 second
-    set_val(XB1_RT, 100);
+combo PressR2andL2 {   // 1 second
+    set_val(PS4_R2, 100);
     wait(70); wait(100);
  
-    set_val(XB1_LT, 100);
+    set_val(PS4_L2, 100);
     wait(70); wait(100);
  
-    set_val(XB1_RT, 100);
+    set_val(PS4_R2, 100);
     wait(70); wait(100);
  
-    set_val(XB1_LT, 100);
+    set_val(PS4_L2, 100);
     wait(70); wait(100);
  
-    set_val(XB1_RT, 100);
+    set_val(PS4_R2, 100);
     wait(70); wait(100);
  
-    set_val(XB1_LT, 100);
+    set_val(PS4_L2, 100);
     wait(50); wait(90);
 }
  
-combo reset //need to wait 2 sec here before the next button press executes
+combo reset {   //need to wait 2 sec here before the next button press executes
     set_val(XB1_A, 100);
     wait(1125);
     wait(1125);
+    }
