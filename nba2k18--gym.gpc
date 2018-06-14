@@ -8,19 +8,34 @@ Mash A for 1.5 seconds, LT + RT .1 seconds after > repeat
 
 #include <titanone.gph>
 
- 
-// VARIABLES
-// ---------------------------------------------------------
-int toggle;
-int onoff;
+int toggleTreadmill = FALSE;
+//int onoff;
 
-/////////////////////////////
 // combo wait times
-int press = 50;
-int rest  = 57;
- 
- 
+//int press = 50;
+//int rest  = 57;
+
+
 main {
+
+    if (event_press(XB1_RIGHT)) {
+        toggleTreadmill = !toggleTreadmill;
+    }
+    
+    if (toggleTreadmill) {
+        combo_run(treadmill);
+    }
+    else {
+        combo_stop(treadmill);
+    }
+}
+
+
+/*************************************************************************************************
+//////// ORIGINAL CODE ////////
+**************************************************************************************************
+
+main {    
     if (get_val(XB1_RIGHT)) toggle =  TRUE; // Turn it on when you press DPAD LEFT
     if (get_val(XB1_RIGHT)) toggle = FALSE; // turn it off when you press DPAD LEFT
     
@@ -43,22 +58,24 @@ main {
     }
  
     if(get_val(PS4_R1)) {
-        combo_run(Turbo_1);
+        combo_run(ropes);
     }
  
     if(event_press(XB1_UP)){
         onoff = !onoff;
     }
  
- 
     if(onoff){
-        combo_run(SMASH_A);
+        combo_run(dumbbells);
     }
 }
+
+*************************************************************************************************/
+
+
  
- 
-combo Something {
-//Press R2 and L2, one after another repeatedly with no delay for 45 seconds.
+combo treadmill {
+    
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
@@ -68,30 +85,53 @@ combo Something {
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
     call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2); call(PressR2andL2);
- 
+
     //Wait 10 seconds.
     wait(4000);
     wait(4000);
     wait(2000);
  
     //Move left stick to the right 5 times.
-    set_val(PS4_LX, 100);
+    set_val(XB1_LX, 100);
     wait(250); wait(250);
  
-    set_val(PS4_LX, 100);
+    set_val(XB1_LX, 100);
     wait(250); wait(250);
  
-    set_val(PS4_LX, 100);
+    set_val(XB1_LX, 100);
     wait(250); wait(250);
  
-    set_val(PS4_LX, 100);
+    set_val(XB1_LX, 100);
     wait(250); wait(250);
  
-    set_val(PS4_LX, 100);
+    set_val(XB1_LX, 100);
     wait(250); wait(250);
  }
- 
-combo SMASH_A {
+
+
+combo PressR2andL2 {   // Each loop == 1 second
+    set_val(XB1_RT, 100);
+    wait(70); wait(100);
+
+    set_val(XB1_LT, 100);
+    wait(70); wait(100);
+
+    set_val(XB1_RT, 100);
+    wait(70); wait(100);
+
+    set_val(XB1_LT, 100);
+    wait(70); wait(100);
+
+    set_val(XB1_RT, 100);
+    wait(70); wait(100);
+
+    set_val(XB1_LT, 100);
+    wait(50); wait(90);
+}
+
+
+/*
+combo dumbbells {
     set_val(XB1_A,100);
     wait(press);
     wait(rest);
@@ -157,44 +197,27 @@ combo SMASH_A {
     wait(1000);
     wait(rest);
 }
- 
-combo Turbo_1 {
-    set_val(PS4_RY, 100);
-    set_val(PS4_LY, -100);
+
+
+combo ropes {
+    set_val(XB1_RY, 100);
+    set_val(XB1_LY, -100);
     wait(30);
-    set_val(PS4_RY, 0);
-    set_val(PS4_LY, 0);
+    set_val(XB1_RY, 0);
+    set_val(XB1_LY, 0);
     wait(15);
-    set_val(PS4_RY, -100);
-    set_val(PS4_LY, 100);
+    set_val(XB1_RY, -100);
+    set_val(XB1_LY, 100);
     wait(30);
-    set_val(PS4_RY, 0);
-    set_val(PS4_LY, 0);
+    set_val(XB1_RY, 0);
+    set_val(XB1_LY, 0);
     wait(15);
 }
- 
-combo PressR2andL2 {   // 1 second
-    set_val(PS4_R2, 100);
-    wait(70); wait(100);
- 
-    set_val(PS4_L2, 100);
-    wait(70); wait(100);
- 
-    set_val(PS4_R2, 100);
-    wait(70); wait(100);
- 
-    set_val(PS4_L2, 100);
-    wait(70); wait(100);
- 
-    set_val(PS4_R2, 100);
-    wait(70); wait(100);
- 
-    set_val(PS4_L2, 100);
-    wait(50); wait(90);
-}
- 
+
+
 combo reset {   //need to wait 2 sec here before the next button press executes
     set_val(XB1_A, 100);
     wait(1125);
     wait(1125);
-}
+    }
+*/
